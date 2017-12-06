@@ -4,12 +4,19 @@ import math
 
 class JosekiOnBoard(object):
     def __init__(self):
-        #create 2d array so that I don't have to duplicate code so much
+        self.josekiList = []    #this list contains the other lists so that I can access them in a loop
+
         self.tlList = [] #top-left
         self.trList = [] #top-right
         self.blList = [] #bottom-left
         self.brList = [] #bottom-right
         self.nonJosekiList = [] #for stones not part of joseki
+
+        self.josekiList.append(self.tlList)
+        self.josekiList.append(self.trList)
+        self.josekiList.append(self.blList)
+        self.josekiList.append(self.brList)
+        self.josekiList.append(self.nonJosekiList)
 
         #need to add passes if last colour is same as currently added colour
         #tlLastColourPlayed
@@ -50,17 +57,7 @@ class JosekiOnBoard(object):
         else:
             #closestCorners = self.closestCorner(move)
             closestJos = self.closestJoseki(move)
-
-            if closestJos == 0:
-                self.tlList.append(move)
-            elif closestJos == 1:
-                self.trList.append(move)
-            elif closestJos == 2:
-                self.blList.append(move)
-            elif closestJos == 3:
-                self.brList.append(move)
-            elif closestJos == 4:
-                self.nonJosekiList.append(move)
+            self.josekiList[closestJos].append(move)
 
     def chebyshevDis(self, currMove, previousMove):
         if len(currMove) != 2:
@@ -69,7 +66,7 @@ class JosekiOnBoard(object):
             distance = max(abs((ord(currMove[0]) - ord(previousMove[0]))), abs((ord(currMove[1]) - ord(previousMove[1]))))
             return distance
 
-    def closestCorner(self, move):
+    '''def closestCorner(self, move):
         distances = []      #list with distances from 4 corners in order of tl, tr, bl, br
         #todo corner could be empty!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! Same as below
         distances.append(self.chebyshevDis(move, self.tlList[0]))
@@ -79,7 +76,7 @@ class JosekiOnBoard(object):
 
         minDist = min(distances)
         indices = [index for index, val in enumerate(distances) if val == minDist]
-        return indices
+        return indices'''
 
     def closestJoseki(self, move):
         distances = []  #list of minimum distances of each joseki array
@@ -88,34 +85,12 @@ class JosekiOnBoard(object):
         #check if joseki are too close to each other to settle them!
         #check if closest joseki is too far away
 
-        for prevMove in self.tlList:
-            tempDist.append(self.chebyshevDis(move, prevMove))
-        if len(tempDist):
-            distances.append(min(tempDist))
-            tempDist.clear()
-
-        for prevMove in self.trList:
-            tempDist.append(self.chebyshevDis(move, prevMove))
-        if len(tempDist):
-            distances.append(min(tempDist))
-            tempDist.clear()
-
-        for prevMove in self.blList:
-            tempDist.append(self.chebyshevDis(move, prevMove))
-        if len(tempDist):
-            distances.append(min(tempDist))
-            tempDist.clear()
-
-        for prevMove in self.brList:
-            tempDist.append(self.chebyshevDis(move, prevMove))
-        if len(tempDist):
-            distances.append(min(tempDist))
-            tempDist.clear()
-
-        for prevMove in self.nonJosekiList:
-            tempDist.append(self.chebyshevDis(move, prevMove))
-        if len(tempDist):
-            distances.append(min(tempDist))
+        for jList in self.josekiList:
+            for prevMove in jList:
+                tempDist.append(self.chebyshevDis(move, prevMove))
+            if len(tempDist):
+                distances.append(min(tempDist))
+                tempDist.clear()
 
         if len(distances):
             minDist = min(distances)
@@ -124,15 +99,22 @@ class JosekiOnBoard(object):
             if len(indices) > 1:    #if equally distant to multiple positions not part of joseki
                 return 4
             else:
+                closestJosekiLen = len(self.josekiList[indices[0]])
 
-                return indices[0]
+                if (minDist > 5 or 
+                    closestJosekiLen >= 10 and minDist > 2 or
+                    closestJosekiLen >= 4 and minDist > 3 or
+                    closestJosekiLen > 20):
+                    return 4
+                else:
+                    return indices[0]
         else:
-            return -1
+            return -1   #error, all distances are empty
 
 
 
 
-with open("test2.sgf") as sgfFile:
+with open("testGame.sgf") as sgfFile:
     gameCollection = sgf.parse(sgfFile.read())
 
 joseki = JosekiOnBoard()
