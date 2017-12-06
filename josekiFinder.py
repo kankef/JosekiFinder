@@ -4,6 +4,7 @@ import math
 
 class JosekiOnBoard(object):
     def __init__(self):
+        #create 2d array so that I don't have to duplicate code so much
         self.tlList = [] #top-left
         self.trList = [] #top-right
         self.blList = [] #bottom-left
@@ -47,18 +48,19 @@ class JosekiOnBoard(object):
                 #Need to consider what happens when a corner piece is approached before a stone is placed in all corners
                 #Also when playing tengen and other moves not in 6-6 area (...scrap game because of little time?)
         else:
-            closestCorners = self.closestCorner(move)
+            #closestCorners = self.closestCorner(move)
             closestJos = self.closestJoseki(move)
 
-            for corner in closestJos:
-                if corner == 0:
-                    self.tlList.append(move)
-                elif corner == 1:
-                    self.trList.append(move)
-                elif corner == 2:
-                    self.blList.append(move)
-                elif corner == 3:
-                    self.brList.append(move)
+            if closestJos == 0:
+                self.tlList.append(move)
+            elif closestJos == 1:
+                self.trList.append(move)
+            elif closestJos == 2:
+                self.blList.append(move)
+            elif closestJos == 3:
+                self.brList.append(move)
+            elif closestJos == 4:
+                self.nonJosekiList.append(move)
 
     def chebyshevDis(self, currMove, previousMove):
         if len(currMove) != 2:
@@ -84,6 +86,7 @@ class JosekiOnBoard(object):
         tempDist = []   #list of distances in one group, will be cleared and re-used each time
 
         #check if joseki are too close to each other to settle them!
+        #check if closest joseki is too far away
 
         for prevMove in self.tlList:
             tempDist.append(self.chebyshevDis(move, prevMove))
@@ -107,18 +110,29 @@ class JosekiOnBoard(object):
             tempDist.append(self.chebyshevDis(move, prevMove))
         if len(tempDist):
             distances.append(min(tempDist))
+            tempDist.clear()
+
+        for prevMove in self.nonJosekiList:
+            tempDist.append(self.chebyshevDis(move, prevMove))
+        if len(tempDist):
+            distances.append(min(tempDist))
 
         if len(distances):
             minDist = min(distances)
             indices = [index for index, val in enumerate(distances) if val == minDist]
-            return indices
+
+            if len(indices) > 1:    #if equally distant to multiple positions not part of joseki
+                return 4
+            else:
+
+                return indices[0]
         else:
             return -1
 
 
 
 
-with open("testGame.sgf") as sgfFile:
+with open("test2.sgf") as sgfFile:
     gameCollection = sgf.parse(sgfFile.read())
 
 joseki = JosekiOnBoard()
