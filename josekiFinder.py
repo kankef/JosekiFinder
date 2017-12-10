@@ -19,10 +19,7 @@ class JosekiOnBoard(object):
         self.josekiList.append(self.nonJosekiList)
 
         #need to add passes if last colour is same as currently added colour
-        #tlLastColourPlayed
-        #trLastColourPlayed
-        #blLastColourPlayed
-        #brLastColourPlayed
+        self.lastColourPlayed = ['B', 'B', 'B', 'B']
 
         self.tlRegEx = r"[a-f][a-f]"
         self.trRegEx = r"[n-s][a-f]"
@@ -30,25 +27,37 @@ class JosekiOnBoard(object):
         self.brRegEx = r"[n-s][n-s]"
 
         self.emptyCorner = 4
+        self.settledCorners = []
+        self.numUnsettledCorners = 4
+
         self.tlSettled = False
         self.trSettled = False
         self.blSettled = False
         self.brSettled = False
 
-    def addMove(self, move):
+        self.settledCorners.append(self.tlSettled)
+        self.settledCorners.append(self.trSettled)
+        self.settledCorners.append(self.blSettled)
+        self.settledCorners.append(self.brSettled)
+
+    def addMove(self, move, colour):
         #need if for settled corners
         if self.emptyCorner:
             if len(self.tlList) == 0 and (re.match(self.tlRegEx, move)):
                 self.tlList.append(move)
+                self.lastColourPlayed[0] = colour
                 self.emptyCorner -= 1
             elif (len(self.trList) == 0) and (re.match(self.trRegEx, move)):
                 self.trList.append(move)
+                self.lastColourPlayed[1] = colour
                 self.emptyCorner -= 1
             elif (len(self.blList) == 0) and (re.match(self.blRegEx, move)):
                 self.blList.append(move)
+                self.lastColourPlayed[2] = colour
                 self.emptyCorner -= 1
             elif (len(self.brList) == 0) and (re.match(self.brRegEx, move)):
                 self.brList.append(move)
+                self.lastColourPlayed[3] = colour
                 self.emptyCorner -= 1
             else:
                 pass
@@ -57,6 +66,12 @@ class JosekiOnBoard(object):
         else:
             #closestCorners = self.closestCorner(move)
             closestJos = self.closestJoseki(move)
+            if closestJos < 4:  #0-3 are corners, 4 is non-joseki
+                if self.lastColourPlayed[closestJos] == colour:
+                    self.josekiList[closestJos].append('tt')
+                
+                self.lastColourPlayed[closestJos] = colour            
+            
             self.josekiList[closestJos].append(move)
 
     def chebyshevDis(self, currMove, previousMove):
@@ -81,9 +96,9 @@ class JosekiOnBoard(object):
     def closestJoseki(self, move):
         distances = []  #list of minimum distances of each joseki array
         tempDist = []   #list of distances in one group, will be cleared and re-used each time
-
+        MAX_JOSEKI_LEN = 20
+        MAX_NON_JOSEKI_LEN = 50
         #check if joseki are too close to each other to settle them!
-        #check if closest joseki is too far away
 
         for jList in self.josekiList:
             for prevMove in jList:
@@ -94,37 +109,56 @@ class JosekiOnBoard(object):
 
         if len(distances):
             minDist = min(distances)
-            indices = [index for index, val in enumerate(distances) if val == minDist]
+            closestJosekiFound = [index for index, val in enumerate(distances) if val == minDist]
+            
+            if closestJosekiFound[0] < 4:
+                cornerSettled = self.settledCorners[closestJosekiFound[0]]
+            else:
+                cornerSettled = False
 
-            if len(indices) > 1:    #if equally distant to multiple positions not part of joseki
+            if len(closestJosekiFound) > 1 or cornerSettled:    #if equally distant to multiple positions not part of joseki
                 return 4
             else:
-                closestJosekiLen = len(self.josekiList[indices[0]])
+                closestJosekiLen = len(self.josekiList[closestJosekiFound[0]])
 
                 if (minDist > 5 or 
                     closestJosekiLen >= 10 and minDist > 2 or
                     closestJosekiLen >= 4 and minDist > 3 or
-                    closestJosekiLen > 20):
+                    closestJosekiLen >= MAX_JOSEKI_LEN):
+                    
+                    if closestJosekiLen >= MAX_JOSEKI_LEN:  #this should only be entered once per corner
+                        if closestJosekiFound[0] < 4:
+                            self.settledCorners[closestJosekiFound[0]] = True
+                            self.numUnsettledCorners -= 1
+                        else:   #number of non joseki stones are greater than Max
+                            if closestJosekiLen >= MAX_NON_JOSEKI_LEN:
+                                self.numUnsettledCorners = 0
                     return 4
                 else:
-                    return indices[0]
+                    return closestJosekiFound[0]
         else:
             return -1   #error, all distances are empty
 
 
 
 
-with open("testGame.sgf") as sgfFile:
+with open("test2.sgf") as sgfFile:
     gameCollection = sgf.parse(sgfFile.read())
 
 joseki = JosekiOnBoard()
+movesPlayed = 0
 
 game = gameCollection[0]
 for node in game.rest:
     move = node.current_prop_value[0]
     colour = node.current_property
 
-    joseki.addMove(move)
+    joseki.addMove(move, colour)
+    movesPlayed += 1
+    if joseki.numUnsettledCorners <= 0:
+        break
+
+print('Total moves played: %d' % movesPlayed)
 
 #game.nodes.append(sgf.Node(game, game.nodes[-1], game.parser))
 #theParser = sgf.Parser().parse("(;B[or])")
