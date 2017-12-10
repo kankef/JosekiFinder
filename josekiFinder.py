@@ -1,6 +1,6 @@
-import sgf
 import re
-import math
+import sgf
+import CreateOutput
 
 class JosekiOnBoard(object):
     def __init__(self):
@@ -65,14 +65,23 @@ class JosekiOnBoard(object):
                 #Also when playing tengen and other moves not in 6-6 area (...scrap game because of little time?)
         else:
             #closestCorners = self.closestCorner(move)
-            closestJos = self.closestJoseki(move)
-            if closestJos < 4:  #0-3 are corners, 4 is non-joseki
-                if self.lastColourPlayed[closestJos] == colour:
-                    self.josekiList[closestJos].append('tt')
+            closestJosIndex = self.closestJoseki(move)
+            currentList = self.josekiList[closestJosIndex]
+
+            ko = 0
+            if len(currentList):
+                ko = currentList.count(move)
+
+            if closestJosIndex < 4:  #0-3 are corners, 4 is non-joseki
+                if self.lastColourPlayed[closestJosIndex] == colour:
+                    currentList.append('tt')
                 
-                self.lastColourPlayed[closestJos] = colour            
-            
-            self.josekiList[closestJos].append(move)
+                self.lastColourPlayed[closestJosIndex] = colour            
+            #if ko joseki is done
+            if ko:
+                self.settledCorners[closestJosIndex] = True
+            else:
+                currentList.append(move)
 
     def chebyshevDis(self, currMove, previousMove):
         if len(currMove) != 2:
@@ -80,18 +89,6 @@ class JosekiOnBoard(object):
         else:
             distance = max(abs((ord(currMove[0]) - ord(previousMove[0]))), abs((ord(currMove[1]) - ord(previousMove[1]))))
             return distance
-
-    '''def closestCorner(self, move):
-        distances = []      #list with distances from 4 corners in order of tl, tr, bl, br
-        #todo corner could be empty!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! Same as below
-        distances.append(self.chebyshevDis(move, self.tlList[0]))
-        distances.append(self.chebyshevDis(move, self.trList[0]))
-        distances.append(self.chebyshevDis(move, self.blList[0]))
-        distances.append(self.chebyshevDis(move, self.brList[0]))
-
-        minDist = min(distances)
-        indices = [index for index, val in enumerate(distances) if val == minDist]
-        return indices'''
 
     def closestJoseki(self, move):
         distances = []  #list of minimum distances of each joseki array
@@ -139,32 +136,39 @@ class JosekiOnBoard(object):
         else:
             return -1   #error, all distances are empty
 
+def findJoseki(inFile, outputCreater):
+    movesPlayed = 0
+    joseki = JosekiOnBoard()
 
+    with open(inFile) as sgfFile:
+        gameCollection = sgf.parse(sgfFile.read())
 
+    game = gameCollection[0]
 
-with open("test2.sgf") as sgfFile:
-    gameCollection = sgf.parse(sgfFile.read())
+    for node in game.rest:  #first node is header info
+        move = node.current_prop_value[0]
+        colour = node.current_property
 
-joseki = JosekiOnBoard()
-movesPlayed = 0
+        joseki.addMove(move, colour)
+        movesPlayed += 1
+        if joseki.numUnsettledCorners <= 0:
+            break
 
-game = gameCollection[0]
-for node in game.rest:
-    move = node.current_prop_value[0]
-    colour = node.current_property
+    for jList in joseki.josekiList[:-1]:
+        outputCreater.addJoseki(jList)
 
-    joseki.addMove(move, colour)
-    movesPlayed += 1
-    if joseki.numUnsettledCorners <= 0:
-        break
+    print('Total moves played in %s: %d' % (inFile, movesPlayed))
 
-print('Total moves played: %d' % movesPlayed)
+outputCreater = CreateOutput.CreateOutputSgf()
+findJoseki("test2.sgf", outputCreater)
+findJoseki("testGame.sgf", outputCreater)
+
+output = outputCreater.getOutputString()
+with open("output.sgf", "w") as f:
+    f.write(output)
 
 #game.nodes.append(sgf.Node(game, game.nodes[-1], game.parser))
 #theParser = sgf.Parser().parse("(;B[or])")
 #game.nodes.append(sgf.Node(game, game.nodes[-1], theParser))
 #collection.parser.parse("(;B[or])")
 #collection = sgf.parse("(;B[or])")
-
-#with open("output.sgf", "w") as f:
-#    collection.output(f)
