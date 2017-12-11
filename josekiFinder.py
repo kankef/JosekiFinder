@@ -64,7 +64,6 @@ class JosekiOnBoard(object):
                 #Need to consider what happens when a corner piece is approached before a stone is placed in all corners
                 #Also when playing tengen and other moves not in 6-6 area (...scrap game because of little time?)
         else:
-            #closestCorners = self.closestCorner(move)
             closestJosIndex = self.closestJoseki(move)
             currentList = self.josekiList[closestJosIndex]
 
@@ -78,7 +77,7 @@ class JosekiOnBoard(object):
                 
                 self.lastColourPlayed[closestJosIndex] = colour            
             #if ko joseki is done
-            if ko:
+            if ko and closestJosIndex < 4:
                 self.settledCorners[closestJosIndex] = True
             else:
                 currentList.append(move)
@@ -95,7 +94,6 @@ class JosekiOnBoard(object):
         tempDist = []   #list of distances in one group, will be cleared and re-used each time
         MAX_JOSEKI_LEN = 20
         MAX_NON_JOSEKI_LEN = 50
-        #check if joseki are too close to each other to settle them!
 
         for jList in self.josekiList:
             for prevMove in jList:
@@ -106,15 +104,22 @@ class JosekiOnBoard(object):
 
         if len(distances):
             minDist = min(distances)
-            closestJosekiFound = [index for index, val in enumerate(distances) if val == minDist]
-            
+            closestJosekiFound = [index for index, val in enumerate(distances) if val == minDist]   #list of the index of closest joseki
+            #allClosedJoseki = [i for i, val in enumerate(distances) if val < 3]    #number of joseki within distance of 2 or less
+
             if closestJosekiFound[0] < 4:
                 cornerSettled = self.settledCorners[closestJosekiFound[0]]
             else:
                 cornerSettled = False
 
-            if len(closestJosekiFound) > 1 or cornerSettled:    #if equally distant to multiple positions not part of joseki
+            #if equally distant to multiple positions not part of joseki
+            if len(closestJosekiFound) > 1 or cornerSettled:
                 return 4
+            #elif len(allClosedJoseki) > 1:
+            #    for corner in allClosedJoseki:
+            #        if corner != 4:
+            #            self.settledCorners[corner] = True
+            #    return 4
             else:
                 closestJosekiLen = len(self.josekiList[closestJosekiFound[0]])
 
@@ -158,14 +163,6 @@ def findJoseki(inFile, outputCreater):
         outputCreater.addJoseki(jList)
 
     print('Total moves played in %s: %d' % (inFile, movesPlayed))
-
-outputCreater = CreateOutput.CreateOutputSgf()
-findJoseki("test2.sgf", outputCreater)
-findJoseki("testGame.sgf", outputCreater)
-
-output = outputCreater.getOutputString()
-with open("output.sgf", "w") as f:
-    f.write(output)
 
 #game.nodes.append(sgf.Node(game, game.nodes[-1], game.parser))
 #theParser = sgf.Parser().parse("(;B[or])")
