@@ -36,26 +36,97 @@ class CreateOutputSgf(object):
         xVal = ord(x) - ord('a')
         yVal = ord(y) - ord('a')
         middle = 9  #middle of board 19x19 board starting count from 0
+        badSymmetry = True
+        checkedSym  = False
+        symmetricPt = [ 'aa','bb','cc','dd','ee','ff','gg','hh','ii','jj','kk','ll','mm','nn','oo','pp','qq','rr','ss',
+                        'as','br','cq','dp','eo','fn','gm','hl','ik','ki','lh','mg','nf','oe','pd','qc','rb','sa','tt'] #BAD PRACTICE
 
         #UGLY CODE !!!
         if xVal < middle and yVal > middle:     #bottom left - need to make 2 mirrors
-            for move in range(len(moveList)):
-                if moveList[move] != "tt":
-                    xVal = ord(moveList[move][0]) - ord('a')
-                    yVal = ord(moveList[move][1]) - ord('a')
-                    moveList[move] = chr((18 - xVal) + ord('a')) + chr((18 - yVal) + ord('a'))
+            for i in range(len(moveList)):
+                move = moveList[i]
+                if not checkedSym and move not in symmetricPt:
+                    badSymmetry = self.inTriangle(move, 2)
+                    checkedSym = True
+                if move != "tt":
+                    if not badSymmetry:
+                        xVal = ord(move[0]) - ord('a')
+                        yVal = ord(move[1]) - ord('a')
+                        moveList[i] = chr((18 - xVal) + ord('a')) + chr((18 - yVal) + ord('a'))
+                    else:
+                        moveList[i] = move[1] + move [0]
+                        #yVal = ord(move[0]) - ord('a')
+                        #xVal = ord(move[1]) - ord('a')
+                        #move = chr((18 - xVal) + ord('a')) + chr((18 - yVal) + ord('a'))
         elif xVal < middle:                     #top left - mirror horizontally
-            for move in range(len(moveList)):
-                if moveList[move] != "tt":
-                    xVal = ord(moveList[move][0]) - ord('a')
-                    y = moveList[move][1]
-                    moveList[move] = chr((18 - xVal) + ord('a')) + y
+            for i in range(len(moveList)):
+                move = moveList[i]
+                if not checkedSym and move not in symmetricPt:
+                    badSymmetry = self.inTriangle(move, 0)
+                    checkedSym = True
+                if move != "tt":
+                    if badSymmetry:
+                        move = move[1] + move[0]
+                    xVal = ord(move[0]) - ord('a')
+                    y = move[1]
+                    moveList[i] = chr((18 - xVal) + ord('a')) + y
         elif yVal > middle:                     #bottem right - mirror vertically
-            for move in range(len(moveList)):
-                if moveList[move] != "tt":
-                    yVal = ord(moveList[move][1]) - ord('a')
-                    x = moveList[move][0]
-                    moveList[move] = x + chr((18 - yVal) + ord('a'))
+            for i in range(len(moveList)):
+                move = moveList[i]
+                if not checkedSym and move not in symmetricPt:
+                    badSymmetry = self.inTriangle(move, 3)
+                    checkedSym = True
+                if move != "tt":
+                    if badSymmetry:
+                        move = move[1] + move[0]
+                    yVal = ord(move[1]) - ord('a')
+                    x = move[0]
+                    moveList[i] = x + chr((18 - yVal) + ord('a'))
+        else:                                   #top left
+            for i in range(len(moveList)):
+                move = moveList[i]
+                if not checkedSym and move not in symmetricPt:
+                    badSymmetry = self.inTriangle(move, 1)
+                    checkedSym = True
+                if move != "tt":
+                    if checkedSym:
+                        if not badSymmetry:
+                            break
+                        else:
+                            moveList[i] = move[1] + move[0]
+                            yVal = ord(move[0]) - ord('a')
+                            xVal = ord(move[1]) - ord('a')
+                            moveList[i] = chr((18 - xVal) + ord('a')) + chr((18 - yVal) + ord('a'))
+                        
+                    
+
+    #determine if move is in correct "triangle" within corner
+    #uses barycentric coordinates
+    def inTriangle(self, move, cornerIndex):
+        xVal = ord(move[0]) - ord('a')
+        yVal = ord(move[1]) - ord('a')
+        coordinateSet = [[1, 0, 9, 8, 9, 0],
+                         [9, 0, 9, 8, 17, 0],
+                         [1, 18, 9, 18, 9, 10],
+                         [9, 18, 17, 18, 9, 10]]
+        p0x = coordinateSet[cornerIndex][0]
+        p0y = coordinateSet[cornerIndex][1]
+        p1x = coordinateSet[cornerIndex][2]
+        p1y = coordinateSet[cornerIndex][3]
+        p2x = coordinateSet[cornerIndex][4]
+        p2y = coordinateSet[cornerIndex][5]
+        
+        area = 0.5 *(-p1y*p2x + p0y*(-p1x + p2x) + p0x*(p1y - p2y) + p1x*p2y)
+        sign = 1
+        if area < 0:
+            sign = -1
+        s = (p0y*p2x - p0x*p2y + (p2y - p0y)*xVal + (p0x - p2x)*yVal) * sign
+        t = (p0x*p1y - p0y*p1x + (p0y - p1y)*xVal + (p1x - p0x)*yVal) * sign
+
+        if s >= 0 and t >= 0 and (s+t) <= 2 * abs(area):
+            return True
+        else:
+            return False
 
     def getOutputString(self):
         output = "(;GM[1]FF[4]AP[JosekiFinder]SZ[19]CA[UTF-8]"                     #Customize!!!!

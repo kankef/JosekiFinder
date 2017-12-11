@@ -6,10 +6,10 @@ class JosekiOnBoard(object):
     def __init__(self):
         self.josekiList = []    #this list contains the other lists so that I can access them in a loop
 
-        self.tlList = [] #top-left
-        self.trList = [] #top-right
-        self.blList = [] #bottom-left
-        self.brList = [] #bottom-right
+        self.tlList = ['aa'] #top-left
+        self.trList = ['sa'] #top-right
+        self.blList = ['as'] #bottom-left
+        self.brList = ['ss'] #bottom-right
         self.nonJosekiList = [] #for stones not part of joseki
 
         self.josekiList.append(self.tlList)
@@ -21,12 +21,7 @@ class JosekiOnBoard(object):
         #need to add passes if last colour is same as currently added colour
         self.lastColourPlayed = ['B', 'B', 'B', 'B']
 
-        self.tlRegEx = r"[a-f][a-f]"
-        self.trRegEx = r"[n-s][a-f]"
-        self.blRegEx = r"[a-f][n-s]"
-        self.brRegEx = r"[n-s][n-s]"
-
-        self.emptyCorner = 4
+        self.emptyCorners = [True, True, True, True]
         self.settledCorners = []
         self.numUnsettledCorners = 4
 
@@ -41,32 +36,16 @@ class JosekiOnBoard(object):
         self.settledCorners.append(self.brSettled)
 
     def addMove(self, move, colour):
-        #need if for settled corners
-        if self.emptyCorner:
-            if len(self.tlList) == 0 and (re.match(self.tlRegEx, move)):
-                self.tlList.append(move)
-                self.lastColourPlayed[0] = colour
-                self.emptyCorner -= 1
-            elif (len(self.trList) == 0) and (re.match(self.trRegEx, move)):
-                self.trList.append(move)
-                self.lastColourPlayed[1] = colour
-                self.emptyCorner -= 1
-            elif (len(self.blList) == 0) and (re.match(self.blRegEx, move)):
-                self.blList.append(move)
-                self.lastColourPlayed[2] = colour
-                self.emptyCorner -= 1
-            elif (len(self.brList) == 0) and (re.match(self.brRegEx, move)):
-                self.brList.append(move)
-                self.lastColourPlayed[3] = colour
-                self.emptyCorner -= 1
-            else:
-                pass
-                #Need to consider what happens when a corner piece is approached before a stone is placed in all corners
-                #Also when playing tengen and other moves not in 6-6 area (...scrap game because of little time?)
-        else:
-            closestJosIndex = self.closestJoseki(move)
-            currentList = self.josekiList[closestJosIndex]
+        #Also when playing tengen and other moves not in 6-6 area (...scrap game because of little time?)
+        closestJosIndex = self.closestJoseki(move)
+        currentList = self.josekiList[closestJosIndex]
 
+        #if len(self.emptyCorners[closestJosIndex]) == 1 and re.match(self.initialRegEx, currentList[0]):
+        if closestJosIndex < 4 and self.emptyCorners[closestJosIndex]:
+            currentList[0] = move
+            self.lastColourPlayed[closestJosIndex] = colour
+            self.emptyCorners[closestJosIndex] = False
+        else:
             ko = 0
             if len(currentList):
                 ko = currentList.count(move)
@@ -81,6 +60,7 @@ class JosekiOnBoard(object):
                 self.settledCorners[closestJosIndex] = True
             else:
                 currentList.append(move)
+                
 
     def chebyshevDis(self, currMove, previousMove):
         if len(currMove) != 2:
