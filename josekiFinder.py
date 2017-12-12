@@ -142,10 +142,4 @@ def findJoseki(inFile, outputCreater):
     for jList in joseki.josekiList[:-1]:
         outputCreater.addJoseki(jList)
 
-    print('Total moves played in %s: %d' % (inFile, movesPlayed))
-
-#game.nodes.append(sgf.Node(game, game.nodes[-1], game.parser))
-#theParser = sgf.Parser().parse("(;B[or])")
-#game.nodes.append(sgf.Node(game, game.nodes[-1], theParser))
-#collection.parser.parse("(;B[or])")
-#collection = sgf.parse("(;B[or])")
+    #print('Total moves played in %s: %d' % (inFile, movesPlayed))
