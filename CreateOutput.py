@@ -55,9 +55,6 @@ class CreateOutputSgf(object):
                         moveList[i] = chr((18 - xVal) + ord('a')) + chr((18 - yVal) + ord('a'))
                     else:
                         moveList[i] = move[1] + move [0]
-                        #yVal = ord(move[0]) - ord('a')
-                        #xVal = ord(move[1]) - ord('a')
-                        #move = chr((18 - xVal) + ord('a')) + chr((18 - yVal) + ord('a'))
         elif xVal < middle:                     #top left - mirror horizontally
             for i in range(len(moveList)):
                 move = moveList[i]
@@ -96,9 +93,7 @@ class CreateOutputSgf(object):
                             moveList[i] = move[1] + move[0]
                             yVal = ord(move[0]) - ord('a')
                             xVal = ord(move[1]) - ord('a')
-                            moveList[i] = chr((18 - xVal) + ord('a')) + chr((18 - yVal) + ord('a'))
-                        
-                    
+                            moveList[i] = chr((18 - xVal) + ord('a')) + chr((18 - yVal) + ord('a'))          
 
     #determine if move is in correct "triangle" within corner
     #uses barycentric coordinates
@@ -129,8 +124,14 @@ class CreateOutputSgf(object):
             return False
 
     def getOutputString(self):
-        output = "(;GM[1]FF[4]AP[JosekiFinder]SZ[19]CA[UTF-8]"                     #Customize!!!!
+        output = "(;GM[1]FF[4]AP[JosekiFinder]SZ[19]CA[UTF-8]"
         output += self.createOutputString(self.josekiList, 'B')
+        output += ')'
+        return output
+
+    def getCustomOutputString(self, customList):
+        output = "(;GM[1]FF[4]AP[JosekiFinder]SZ[19]CA[UTF-8]"
+        output += self.createOutputString(customList, 'B')
         output += ')'
         return output
 
