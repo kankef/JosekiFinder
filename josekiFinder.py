@@ -1,5 +1,5 @@
 import re
-import sgf
+import sgf              #this is an open source library to parse sgf files. I did not write this library. https://github.com/jtauber/sgf
 import CreateOutput
 
 class JosekiOnBoard(object):
@@ -36,7 +36,6 @@ class JosekiOnBoard(object):
         self.settledCorners.append(self.brSettled)
 
     def addMove(self, move, colour):
-        #Also when playing tengen and other moves not in 6-6 area (...scrap game because of little time?)
         closestJosIndex = self.closestJoseki(move)
         currentList = self.josekiList[closestJosIndex]
 
@@ -105,7 +104,7 @@ class JosekiOnBoard(object):
 
                 if (minDist > 5 or 
                     closestJosekiLen >= 10 and minDist > 2 or
-                    closestJosekiLen >= 4 and minDist > 3 or
+                    closestJosekiLen >= 6 and minDist > 3 or
                     closestJosekiLen >= MAX_JOSEKI_LEN):
                     
                     if closestJosekiLen >= MAX_JOSEKI_LEN:  #this should only be entered once per corner

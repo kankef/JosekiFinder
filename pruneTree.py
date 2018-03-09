@@ -53,8 +53,8 @@ pruneTree(josekiList)
 print('Removed by Support: %d' % removedBySupport)
 sortTree(josekiList)
 
-pickle.dump(josekiList, open("2000s_pruned.p", "wb"))
+pickle.dump(josekiList, open("2000s_less_pruned.p", "wb"))
 outputCreater = CreateOutput.CreateOutputSgf()
 output = outputCreater.getCustomOutputString(josekiList)
-with open("2000s_pruned.sgf", "w") as f:
+with open("2000s_less_pruned.sgf", "w") as f:
         f.write(output)

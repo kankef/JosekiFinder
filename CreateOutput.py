@@ -5,6 +5,8 @@ import sgf
 class CreateOutputSgf(object):
     def __init__(self):
         self.josekiList = []    #contains joseki in form of other lists containing [move, childMoves[], frequency]
+        self.numVariations = 0  #total number of variations
+        self.numMoves = 0       #total number of moves in list
 
     def addJoseki(self, moveList):
         self.correctSymmetry(moveList)
@@ -125,13 +127,19 @@ class CreateOutputSgf(object):
 
     def getOutputString(self):
         output = "(;GM[1]FF[4]AP[JosekiFinder]SZ[19]CA[UTF-8]"
-        output += self.createOutputString(self.josekiList, 'B')
+        moveString = self.createOutputString(self.josekiList, 'B')
+        output += 'C[Total Variations: ' + str(self.numVariations - 1)
+        output += '\nTotal Moves: ' + str(self.numMoves) + ']'
+        output += moveString
         output += ')'
         return output
 
     def getCustomOutputString(self, customList):
         output = "(;GM[1]FF[4]AP[JosekiFinder]SZ[19]CA[UTF-8]"
-        output += self.createOutputString(customList, 'B')
+        moveString = self.createOutputString(customList, 'B')
+        output += 'C[Total Variations: ' + str(self.numVariations - 1)
+        output += '\nTotal Moves: ' + str(self.numMoves) + ']'
+        output += moveString
         output += ')'
         return output
 
@@ -141,6 +149,7 @@ class CreateOutputSgf(object):
         output = ""
         if len(tree) == 0:
             output += ')'
+            self.numVariations += 1
             return output
         else:
             if colour == 'B':
@@ -149,6 +158,7 @@ class CreateOutputSgf(object):
                 nextColour = 'B'
 
             for subTree in tree:
+                self.numMoves += 1
                 if len(tree) > 1:
                     output += '('
                 output += ';'
@@ -156,9 +166,13 @@ class CreateOutputSgf(object):
                 output += '['
                 output += subTree[0]
                 output += ']'
+                output += 'C[Support: '     #add comment with frequency of move
+                output += str(subTree[2])
+                output += ']'
                 output += self.createOutputString(subTree[1], nextColour)
                 if len(subTree[1]) > 1:
                     output += ')'
+                    self.numVariations += 1
 
             return output
 
